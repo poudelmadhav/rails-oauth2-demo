@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>OAuth Single Page Client</title>
+</head>
+<body>
+  <h1>OAuth Client 2 Demo</h1>
+  <div id="user-info">Loading...</div>
+
+  <script>
+    // 🔧 Config (change these for your setup)
+    const AUTH_SERVER_URL = 'http://localhost:4000';
+    const CLIENT_ID = 'oSzov48mNFM3XOPaaMsBC8puqqDLFRgh_6ke6mXA_PU';
+    const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+    function getQueryParam(param) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(param);
+    }
+
+    async function exchangeCodeForToken(code) {
+      const response = await fetch(`${AUTH_SERVER_URL}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: REDIRECT_URI,
+          client_id: CLIENT_ID
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to get access token');
+      return await response.json();
+    }
+
+    async function fetchUserProfile(token) {
+      const response = await fetch(`${AUTH_SERVER_URL}/api/v1/profiles/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error('Failed to get profile');
+      return await response.json();
+    }
+
+    async function main() {
+      const code = getQueryParam('code');
+
+      if (!code) {
+        // Redirect user to auth server
+        const authUrl = `${AUTH_SERVER_URL}/oauth/authorize?` +
+                        `response_type=code&client_id=${CLIENT_ID}` +
+                        `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=public`;
+        window.location.href = authUrl;
+        return;
+      }
+
+      try {
+        const tokenData = await exchangeCodeForToken(code);
+        const profile = await fetchUserProfile(tokenData.access_token);
+        document.getElementById('user-info').innerText = `Logged in as: ${profile.email}`;
+      } catch (err) {
+        document.getElementById('user-info').innerText = 'Login failed: ' + err.message;
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
+
