@@ -20,6 +20,7 @@
     }
 
     function saveTokenData(data) {
+      data.created_at = Date.now();
       localStorage.setItem("oauth_token", JSON.stringify(data));
     }
 
@@ -29,8 +30,12 @@
       return JSON.parse(raw);
     }
 
+    function clearTokenData() {
+      localStorage.removeItem("oauth_token");
+    }
+
     function isTokenExpired(tokenData) {
-      const expiresAt = (tokenData.created_at + tokenData.expires_in) * 1000;
+      const expiresAt = tokenData.created_at + tokenData.expires_in * 1000;
       return Date.now() > expiresAt;
     }
 
@@ -48,7 +53,6 @@
 
       if (!response.ok) throw new Error('Failed to get access token');
       const data = await response.json();
-      data.created_at = Math.floor(Date.now() / 1000);
       saveTokenData(data);
       return data;
     }
@@ -66,7 +70,6 @@
 
       if (!response.ok) throw new Error('Failed to refresh token');
       const data = await response.json();
-      data.created_at = Math.floor(Date.now() / 1000);
       saveTokenData(data);
       return data;
     }
@@ -76,6 +79,7 @@
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      if (response.status === 401) return null; // Token might be expired
       if (!response.ok) throw new Error('Failed to get profile');
       return await response.json();
     }
@@ -84,36 +88,54 @@
       const code = getQueryParam('code');
       let tokenData = getTokenData();
 
-      if (code && !tokenData) {
-        tokenData = await exchangeCodeForToken(code);
-        window.history.replaceState({}, document.title, REDIRECT_URI); // Clean URL
-      } else if (tokenData && isTokenExpired(tokenData)) {
-        if (tokenData.refresh_token) {
-          try {
-            tokenData = await refreshAccessToken(tokenData.refresh_token);
-          } catch (err) {
-            localStorage.removeItem("oauth_token");
+      try {
+        if (code && !tokenData) {
+          tokenData = await exchangeCodeForToken(code);
+          window.history.replaceState({}, document.title, REDIRECT_URI); // Clean URL
+        }
+
+        if (!tokenData || isTokenExpired(tokenData)) {
+          if (tokenData?.refresh_token) {
+            try {
+              tokenData = await refreshAccessToken(tokenData.refresh_token);
+            } catch {
+              clearTokenData();
+              tokenData = null;
+            }
+          } else {
             tokenData = null;
           }
-        } else {
-          localStorage.removeItem("oauth_token");
-          tokenData = null;
         }
-      }
 
-      if (!tokenData) {
-        const authUrl = `${AUTH_SERVER_URL}/oauth/authorize?` +
-                        `response_type=code&client_id=${CLIENT_ID}` +
-                        `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=public`;
-        window.location.href = authUrl;
-        return;
-      }
+        if (!tokenData) {
+          const authUrl = `${AUTH_SERVER_URL}/oauth/authorize?` +
+                          `response_type=code&client_id=${CLIENT_ID}` +
+                          `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=public`;
+          window.location.href = authUrl;
+          return;
+        }
 
-      try {
-        const profile = await fetchUserProfile(tokenData.access_token);
+        let profile = await fetchUserProfile(tokenData.access_token);
+
+        if (!profile && tokenData.refresh_token) {
+          try {
+            tokenData = await refreshAccessToken(tokenData.refresh_token);
+            profile = await fetchUserProfile(tokenData.access_token);
+          } catch {
+            clearTokenData();
+            const authUrl = `${AUTH_SERVER_URL}/oauth/authorize?` +
+                            `response_type=code&client_id=${CLIENT_ID}` +
+                            `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=public`;
+            window.location.href = authUrl;
+            return;
+          }
+        }
+
+        if (!profile) throw new Error('Unable to load profile');
+
         document.getElementById('user-info').innerText = `Logged in as: ${profile.email}\n Application Name: ${profile.application_name}`;
       } catch (err) {
-        document.getElementById('user-info').innerText = 'Profile fetch failed: ' + err.message;
+        document.getElementById('user-info').innerText = 'Error: ' + err.message;
       }
     }
 
