@@ -3,7 +3,7 @@ class Api::V1::ProfilesController < ApplicationController
   before_action :doorkeeper_authorize!
 
   def me
-    render json: current_resource_owner
+    render json: current_resource_owner.as_json.merge(application_name: doorkeeper_token.application.name)
   end
 
   private
