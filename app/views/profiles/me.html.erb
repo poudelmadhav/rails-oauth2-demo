@@ -1,0 +1,4 @@
+<h1>Oauth Server Me</h1>
+<p>Currently logged in as: <%= @user.email %></p>
+
+<%= button_to 'Logout', destroy_user_session_path, method: :delete, class: 'btn btn-danger' %>
