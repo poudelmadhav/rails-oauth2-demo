@@ -9,14 +9,29 @@
   <div id="user-info">Loading...</div>
 
   <script>
-    // 🔧 Config (change these for your setup)
+    // 🔧 Config
     const AUTH_SERVER_URL = 'http://localhost:4000';
-    const CLIENT_ID = 'oSzov48mNFM3XOPaaMsBC8puqqDLFRgh_6ke6mXA_PU';
+    const CLIENT_ID = '75NDc6oaVTTxYzRV5BfQSLo2BDdLw_q1cHP58Z4zFMg';
     const REDIRECT_URI = window.location.origin + window.location.pathname;
 
     function getQueryParam(param) {
       const params = new URLSearchParams(window.location.search);
       return params.get(param);
+    }
+
+    function saveTokenData(data) {
+      localStorage.setItem("oauth_token", JSON.stringify(data));
+    }
+
+    function getTokenData() {
+      const raw = localStorage.getItem("oauth_token");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    }
+
+    function isTokenExpired(tokenData) {
+      const expiresAt = (tokenData.created_at + tokenData.expires_in) * 1000;
+      return Date.now() > expiresAt;
     }
 
     async function exchangeCodeForToken(code) {
@@ -32,7 +47,28 @@
       });
 
       if (!response.ok) throw new Error('Failed to get access token');
-      return await response.json();
+      const data = await response.json();
+      data.created_at = Math.floor(Date.now() / 1000);
+      saveTokenData(data);
+      return data;
+    }
+
+    async function refreshAccessToken(refreshToken) {
+      const response = await fetch(`${AUTH_SERVER_URL}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: CLIENT_ID
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to refresh token');
+      const data = await response.json();
+      data.created_at = Math.floor(Date.now() / 1000);
+      saveTokenData(data);
+      return data;
     }
 
     async function fetchUserProfile(token) {
@@ -46,9 +82,26 @@
 
     async function main() {
       const code = getQueryParam('code');
+      let tokenData = getTokenData();
 
-      if (!code) {
-        // Redirect user to auth server
+      if (code && !tokenData) {
+        tokenData = await exchangeCodeForToken(code);
+        window.history.replaceState({}, document.title, REDIRECT_URI); // Clean URL
+      } else if (tokenData && isTokenExpired(tokenData)) {
+        if (tokenData.refresh_token) {
+          try {
+            tokenData = await refreshAccessToken(tokenData.refresh_token);
+          } catch (err) {
+            localStorage.removeItem("oauth_token");
+            tokenData = null;
+          }
+        } else {
+          localStorage.removeItem("oauth_token");
+          tokenData = null;
+        }
+      }
+
+      if (!tokenData) {
         const authUrl = `${AUTH_SERVER_URL}/oauth/authorize?` +
                         `response_type=code&client_id=${CLIENT_ID}` +
                         `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=public`;
@@ -57,11 +110,10 @@
       }
 
       try {
-        const tokenData = await exchangeCodeForToken(code);
         const profile = await fetchUserProfile(tokenData.access_token);
-        document.getElementById('user-info').innerText = `Logged in as: ${profile.email}`;
+        document.getElementById('user-info').innerText = `Logged in as: ${profile.email}\n Application Name: ${profile.application_name}`;
       } catch (err) {
-        document.getElementById('user-info').innerText = 'Login failed: ' + err.message;
+        document.getElementById('user-info').innerText = 'Profile fetch failed: ' + err.message;
       }
     }
 
@@ -69,4 +121,3 @@
   </script>
 </body>
 </html>
-
