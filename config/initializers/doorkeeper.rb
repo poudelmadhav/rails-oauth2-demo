@@ -22,7 +22,7 @@ Doorkeeper.configure do
     # Put your admin authentication logic here.
     # Example implementation:
 
-    current_user&.admin? || redirect_to(new_user_session_url)
+    current_user&.email == "madhav@namespace.jp" || redirect_to(new_user_session_url)
   end
 
   # You can use your own model classes if you need to extend (or even override) default
@@ -226,7 +226,7 @@ Doorkeeper.configure do
   # `grant_type` - the grant type of the request (see Doorkeeper::OAuth)
   # `scopes` - the requested scopes (see Doorkeeper::OAuth::Scopes)
   #
-  # use_refresh_token
+  use_refresh_token
 
   # Provide support for an owner to be assigned to each registered application (disabled by default)
   # Optional parameter confirmation: true (default: false) if you want to enforce ownership of
@@ -239,9 +239,9 @@ Doorkeeper.configure do
   # Define access token scopes for your provider
   # For more information go to
   # https://doorkeeper.gitbook.io/guides/ruby-on-rails/scopes
-  #
-  default_scopes  :public
-  # optional_scopes :write, :update
+
+  default_scopes :read, :public
+  optional_scopes :write
 
   # Allows to restrict only certain scopes for grant_type.
   # By default, all the scopes will be available for all the grant types.
@@ -256,7 +256,7 @@ Doorkeeper.configure do
   # not in configuration, i.e. +default_scopes+ or +optional_scopes+.
   # (disabled by default)
   #
-  # enforce_configured_scopes
+  enforce_configured_scopes
 
   # Change the way client credentials are retrieved from the request object.
   # By default it retrieves first from the `HTTP_AUTHORIZATION` header, then
@@ -395,13 +395,6 @@ Doorkeeper.configure do
   #
   #   client.grant_flows.include?(grant_flow)
   # end
-  allow_grant_flow_for_client do |grant_flow, client|
-    if grant_flow == "authorization_code"
-      !client.confidential?  # Allow public clients
-    else
-      true
-    end
-  end
 
   # If you need arbitrary Resource Owner-Client authorization you can enable this option
   # and implement the check your need. Config option must respond to #call and return
