@@ -66,4 +66,4 @@ gem "doorkeeper", "~> 5.8"
 
 gem "devise", "~> 4.9"
 
-gem "rack-cors", "~> 3.0",  require: 'rack/cors'
+gem "rack-cors", "~> 3.0",  require: "rack/cors"
