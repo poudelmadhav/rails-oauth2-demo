@@ -35,7 +35,9 @@ rails console
 app = Doorkeeper::Application.create!(
   name: "Awesome Client",
   redirect_uri: "http://localhost:12000 http://localhost:9000",  # Replace with your SPA URL for client1 and client2
-  scopes: "public"
+  scopes: "public",
+  trusted: true,
+  confidential: false
 )
 puts "Client ID: \#{app.uid}"
 puts "Secret: \#{app.secret}" # Not needed for public clients (confidential: false)
