@@ -1,6 +1,6 @@
 # OAuth 2 Demo - Rails Auth Server + SPA Clients
 
-This project demonstrates an OAuth2 setup using a **Ruby on Rails authorization server** (with Doorkeeper + Devise) and two separate **JavaScript single-page clients** (Client1 and Client2).
+This project demonstrates an OAuth2 setup using a **Ruby on Rails authorization server** (with Doorkeeper + Devise) and two separate **JavaScript single-page clients** (Client1 and Client2). The server also supports **OpenID Connect** for identity authentication flow.
 
 ---
 
@@ -23,6 +23,25 @@ This project demonstrates an OAuth2 setup using a **Ruby on Rails authorization 
 cd rails-auth-server
 bundle install
 rails db:setup
+```
+
+### Generate RSA private key for OpenID Connect
+
+The OpenID Connect implementation requires an RSA private key for signing JWT tokens. Before starting the server, check if you need to generate this key:
+
+**Note: Make sure you are in the `rails-auth-server` directory for these steps.**
+
+1. Look for the file `config/keys/private.pem`
+2. If this file does not exist, generate it with:
+
+```bash
+openssl genrsa -out config/keys/private.pem 2048
+```
+
+3. For security, you may want to restrict file permissions:
+
+```bash
+chmod 600 config/keys/private.pem
 ```
 
 Create a Doorkeeper application:
@@ -93,6 +112,38 @@ const AUTH_SERVER_URL = 'http://localhost:4000';
 * `GET /oauth/authorize` – Begin auth flow
 * `POST /oauth/token` – Exchange code / refresh token
 * `GET /api/v1/profiles/me` – Protected API endpoint
+
+### OpenID Connect Endpoints
+* `GET /.well-known/openid-configuration` - OpenID Connect discovery document
+* `GET /oauth/userinfo` - User information endpoint
+* `GET /oauth/jwks` - JSON Web Key Set for verifying tokens
+
+---
+
+## 🔐 OpenID Connect Support
+
+This project includes support for OpenID Connect on top of OAuth2. OpenID Connect extends OAuth2 by providing identity verification and authentication details alongside authorization.
+
+### OpenID Connect Features
+* **ID Tokens**: JWT format tokens containing authenticated user information
+* **Standard Claims**: Access to user profile information such as email, name, and profile
+* **Discovery Document**: Well-known endpoint for clients to discover server capabilities
+* **Userinfo Endpoint**: Additional endpoint to fetch user details
+
+### Using OpenID Connect
+To use OpenID Connect in your client applications, request the appropriate scopes:
+* `openid` - Required for OpenID Connect flow
+* `profile` - Access to user's name and basic profile info
+* `email` - Access to user's email address
+
+Example authorization request with OpenID Connect:
+```
+http://localhost:4000/oauth/authorize?
+  client_id=YOUR_CLIENT_ID&
+  redirect_uri=http://localhost:12000&
+  response_type=code&
+  scope=openid profile email
+```
 
 ---
 
