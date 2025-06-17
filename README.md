@@ -116,7 +116,7 @@ const AUTH_SERVER_URL = 'http://localhost:4000';
 ### OpenID Connect Endpoints
 * `GET /.well-known/openid-configuration` - OpenID Connect discovery document
 * `GET /oauth/userinfo` - User information endpoint
-* `GET /oauth/jwks` - JSON Web Key Set for verifying tokens
+* `GET /oauth/discovery/keys` - JSON Web Key Set for verifying tokens
 
 ---
 
