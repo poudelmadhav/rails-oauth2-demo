@@ -1,6 +1,6 @@
 # app/controllers/api/v1/profiles_controller.rb
 class Api::V1::ProfilesController < ApplicationController
-  before_action :doorkeeper_authorize!
+  before_action -> { doorkeeper_authorize! :profile }
 
   def me
     render json: current_resource_owner.as_json.merge(application_name: doorkeeper_token.application.name)

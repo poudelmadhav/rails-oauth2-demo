@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  use_doorkeeper_openid_connect
   namespace :api do
     namespace :v1 do
       get "profiles/me"

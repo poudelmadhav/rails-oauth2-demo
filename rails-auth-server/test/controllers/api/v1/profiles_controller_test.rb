@@ -9,7 +9,7 @@ class Api::V1::ProfilesControllerTest < ActionDispatch::IntegrationTest
       resource_owner_id: @user.id,
       application: @application,
       expires_in: 1.hour,
-      scopes: "public"
+      scopes: "openid email profile"
     )
   end
 

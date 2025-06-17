@@ -94,6 +94,9 @@ jobs:
           bundler-cache: true
           working-directory: rails-auth-server
 
+      - name: Generate PEM file
+        run: openssl genrsa -out config/keys/private.pem 2048
+
       - name: Run tests
         env:
           RAILS_ENV: test
@@ -106,5 +109,5 @@ jobs:
         if: failure()
         with:
           name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
+          path: ${{ github.workspace }}/rails-auth-server/tmp/screenshots
           if-no-files-found: ignore
