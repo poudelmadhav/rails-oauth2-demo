@@ -7,7 +7,7 @@ Doorkeeper::OpenidConnect.configure do
 
   signing_key File.read(Rails.root.join("config/keys/private.pem"))
 
-  subject_types_supported [:public]
+  subject_types_supported [ :public ]
 
   resource_owner_from_access_token do |access_token|
     User.find_by(id: access_token.resource_owner_id)
