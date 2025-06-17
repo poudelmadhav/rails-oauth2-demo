@@ -109,5 +109,5 @@ jobs:
         if: failure()
         with:
           name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
+          path: ${{ github.workspace }}/rails-auth-server/tmp/screenshots
           if-no-files-found: ignore
