@@ -5,15 +5,12 @@ Doorkeeper::OpenidConnect.configure do
     "https://localhost:300" # Replace with your actual issuer URL
   end
 
-  signing_key do
-    OpenSSL::PKey::RSA.new(File.read(Rails.root.join('private_key.pem')))
-  end
+  signing_key File.read(Rails.root.join("config/keys/private.pem"))
 
   subject_types_supported [:public]
 
   resource_owner_from_access_token do |access_token|
-    # Example implementation:
-    # User.find_by(id: access_token.resource_owner_id)
+    User.find_by(id: access_token.resource_owner_id)
   end
 
   auth_time_from_resource_owner do |resource_owner|
@@ -57,14 +54,17 @@ Doorkeeper::OpenidConnect.configure do
   # Expiration time on or after which the ID Token MUST NOT be accepted for processing. (default 120 seconds).
   # expiration 600
 
-  # Example claims:
   claims do
-    normal_claim :email do |resource_owner|
+    normal_claim :sub, scope: :openid do |resource_owner|
+      "user-#{resource_owner.id}"
+    end
+
+    normal_claim :email, scope: :email do |resource_owner|
       resource_owner.email
     end
 
-    # normal_claim :_bar_ do |resource_owner|
-    #   resource_owner.bar
+    # normal_claim :name, scope: :profile do |resource_owner|
+    #   resource_owner&.name
     # end
   end
 end

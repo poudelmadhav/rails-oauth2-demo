@@ -34,4 +34,4 @@
 /config/master.key
 
 # Ignore credentials file
-private_key.pem
+config/keys/private.pem
