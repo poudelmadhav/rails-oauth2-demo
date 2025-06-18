@@ -61,6 +61,18 @@ app = Doorkeeper::Application.create!(
 puts "Client ID: \#{app.uid}"
 puts "Secret: \#{app.secret}" # Not needed for public clients (confidential: false)
 ```
+
+### Create a User Account
+
+```ruby
+# Create a new user
+User.create!(
+  email: "user@example.com",
+  password: "password123",
+  password_confirmation: "password123"
+)
+```
+
 ### Start the Rails server
 
 ```bash
@@ -112,6 +124,7 @@ const AUTH_SERVER_URL = 'http://localhost:4000';
 * `GET /oauth/authorize` – Begin auth flow
 * `POST /oauth/token` – Exchange code / refresh token
 * `GET /api/v1/profiles/me` – Protected API endpoint
+* `GET /oauth/applications` - View and manage OAuth applications (admin interface)
 
 ### OpenID Connect Endpoints
 * `GET /.well-known/openid-configuration` - OpenID Connect discovery document
